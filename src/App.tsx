@@ -1,0 +1,48 @@
+import type { PropsWithChildren } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useAuth } from './auth';
+import { canVisit, Shell } from './components/Shell';
+import { Loading } from './components/ui';
+import { AppEditorPage } from './pages/AppEditorPage';
+import { AppsPage } from './pages/AppsPage';
+import { ChatRunPage } from './pages/ChatRunPage';
+import { EvaluationSetsPage } from './pages/EvaluationSetsPage';
+import { ImportWizardPage } from './pages/ImportWizardPage';
+import { KnowledgeDetailPage } from './pages/KnowledgeDetailPage';
+import { KnowledgeListPage } from './pages/KnowledgeListPage';
+import { LoginPage } from './pages/LoginPage';
+import { ObservabilityPage } from './pages/ObservabilityPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { SharePage } from './pages/SharePage';
+import { ToolsPage } from './pages/ToolsPage';
+import { WorkbenchPage } from './pages/WorkbenchPage';
+
+function Protected({ children }: PropsWithChildren) {
+  const { me, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <Loading text="正在验证登录状态" />;
+  if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (!canVisit(me.role, location.pathname)) return <Navigate to="/workbench" replace />;
+  return <Shell>{children}</Shell>;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/share/:token" element={<SharePage />} />
+      <Route path="/workbench" element={<Protected><WorkbenchPage /></Protected>} />
+      <Route path="/chat/:appId" element={<Protected><ChatRunPage /></Protected>} />
+      <Route path="/apps" element={<Protected><AppsPage /></Protected>} />
+      <Route path="/apps/:appId" element={<Protected><AppEditorPage /></Protected>} />
+      <Route path="/knowledge" element={<Protected><KnowledgeListPage /></Protected>} />
+      <Route path="/knowledge/:kbId/import" element={<Protected><ImportWizardPage /></Protected>} />
+      <Route path="/knowledge/:kbId/*" element={<Protected><KnowledgeDetailPage /></Protected>} />
+      <Route path="/observability" element={<Protected><ObservabilityPage /></Protected>} />
+      <Route path="/evaluation-sets" element={<Protected><EvaluationSetsPage /></Protected>} />
+      <Route path="/tools" element={<Protected><ToolsPage /></Protected>} />
+      <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="*" element={<Navigate to="/workbench" replace />} />
+    </Routes>
+  );
+}
